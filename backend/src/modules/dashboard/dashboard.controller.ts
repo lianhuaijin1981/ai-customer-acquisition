@@ -23,4 +23,12 @@ export class DashboardController {
   @Get('funnel')
   @ApiOperation({ summary: '获取漏斗数据' })
   getFunnel() { return this.service.getFunnel() }
+
+  @Get('platform-distribution')
+  @ApiOperation({ summary: '获取平台线索分布' })
+  getPlatformDistribution() { return this.service.getPlatformDistribution() }
+
+  @Get('alerts')
+  @ApiOperation({ summary: '获取实时风控预警' })
+  getAlerts() { return this.service.getAlerts() }
 }

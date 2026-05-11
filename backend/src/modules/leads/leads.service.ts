@@ -1,9 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { DB_TOKEN } from '../../database/database.module'
 import { leads } from '../../database/schema'
-import { eq, and, ilike, gte, lte, desc, count, SQL } from 'drizzle-orm'
+import { eq, and, ilike, gte, desc, count, SQL } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { AiService } from '../../common/services/ai.service'
 
 interface LeadFilter {
   platform?: string
@@ -19,7 +19,10 @@ interface LeadFilter {
 
 @Injectable()
 export class LeadsService {
-  constructor(@Inject(DB_TOKEN) private db: any) {}
+  constructor(
+    @Inject(DB_TOKEN) private db: any,
+    private aiService: AiService,
+  ) {}
 
   async findAll(filter: LeadFilter = {}) {
     const { page = 1, pageSize = 20 } = filter
@@ -88,5 +91,44 @@ export class LeadsService {
       todayLeads: Number(todayLeads[0]?.count ?? 0),
       highIntent: Number(highIntent[0]?.count ?? 0),
     }
+  }
+
+  // ========== AI 意图重新分析 ==========
+  async analyzeIntent(leadId: string) {
+    const lead = await this.findById(leadId)
+    if (!lead) return null
+
+    const result = await this.aiService.analyzeIntent({
+      bio: lead.bio ?? '',
+      interactionContent: lead.interactionContent ?? '',
+      platform: lead.platform,
+      followerCount: lead.followerCount ?? 0,
+    })
+
+    // 更新线索意图分数
+    await this.update(leadId, {
+      intentScore: result.intentScore,
+      intentLevel: result.intentLevel,
+      industry: result.industry ?? lead.industry,
+    })
+
+    return result
+  }
+
+  // ========== 批量导入线索 ==========
+  async batchImport(items: Partial<typeof leads.$inferInsert>[]) {
+    const results = { success: 0, failed: 0, errors: [] as string[] }
+
+    for (const item of items) {
+      try {
+        await this.create(item)
+        results.success++
+      } catch (err: any) {
+        results.failed++
+        results.errors.push(err.message)
+      }
+    }
+
+    return results
   }
 }

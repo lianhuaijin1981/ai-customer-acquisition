@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { ThrottlerModule } from '@nestjs/throttler'
 import { ScheduleModule } from '@nestjs/schedule'
 import { DatabaseModule } from './database/database.module'
+import { CommonModule } from './common/common.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { LeadsModule } from './modules/leads/leads.module'
 import { OutreachModule } from './modules/outreach/outreach.module'
@@ -12,6 +13,8 @@ import { RiskModule } from './modules/risk/risk.module'
 import { AccountsModule } from './modules/accounts/accounts.module'
 import { TemplatesModule } from './modules/templates/templates.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
+import { CollectorModule } from './modules/collector/collector.module'
+import { SchedulerModule } from './modules/scheduler/scheduler.module'
 
 @Module({
   imports: [
@@ -25,6 +28,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
     }]),
     ScheduleModule.forRoot(),
     DatabaseModule,
+    CommonModule,
     AuthModule,
     LeadsModule,
     OutreachModule,
@@ -34,6 +38,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
     AccountsModule,
     TemplatesModule,
     DashboardModule,
+    CollectorModule,
+    SchedulerModule,
   ],
 })
 export class AppModule {}

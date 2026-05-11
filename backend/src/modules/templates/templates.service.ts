@@ -1,35 +1,72 @@
-import { Injectable, Inject } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { Injectable, Inject, NotFoundException } from '@nestjs/common'
 import { DB_TOKEN } from '../../database/database.module'
 import { templates } from '../../database/schema'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, ilike, and, SQL } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
+import { AiService, GenerateTemplateParams } from '../../common/services/ai.service'
+
+interface TemplateFilter {
+  industry?: string
+  scene?: string
+  status?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
 
 @Injectable()
 export class TemplatesService {
   constructor(
     @Inject(DB_TOKEN) private db: any,
-    private config: ConfigService,
+    private aiService: AiService,
   ) {}
 
-  async findAll(filter: any = {}) {
-    const data = await this.db.select().from(templates).orderBy(desc(templates.createdAt))
-    return { data, total: data.length }
+  async findAll(filter: TemplateFilter = {}) {
+    const { page = 1, pageSize = 20 } = filter
+    const offset = (page - 1) * pageSize
+
+    const conditions: SQL[] = []
+    if (filter.industry) conditions.push(eq(templates.industry, filter.industry))
+    if (filter.scene) conditions.push(eq(templates.scene, filter.scene))
+    if (filter.status) conditions.push(eq(templates.status, filter.status))
+    if (filter.keyword) conditions.push(ilike(templates.name, `%${filter.keyword}%`))
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const data = await this.db
+      .select()
+      .from(templates)
+      .where(where)
+      .orderBy(desc(templates.createdAt))
+      .limit(pageSize)
+      .offset(offset)
+
+    return { data, total: data.length, page, pageSize }
   }
 
   async findById(id: string) {
     const [t] = await this.db.select().from(templates).where(eq(templates.id, id))
+    if (!t) throw new NotFoundException(`模板 ${id} 不存在`)
     return t
   }
 
-  async create(data: any) {
+  async create(data: any, userId?: string) {
     const id = uuidv4()
-    const [created] = await this.db.insert(templates).values({ id, ...data }).returning()
+    const [created] = await this.db.insert(templates).values({
+      id,
+      ...data,
+      createdBy: userId,
+    }).returning()
     return created
   }
 
   async update(id: string, data: any) {
-    const [updated] = await this.db.update(templates).set({ ...data, updatedAt: new Date() }).where(eq(templates.id, id)).returning()
+    const [updated] = await this.db
+      .update(templates)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(templates.id, id))
+      .returning()
+    if (!updated) throw new NotFoundException(`模板 ${id} 不存在`)
     return updated
   }
 
@@ -38,34 +75,53 @@ export class TemplatesService {
     return { success: true }
   }
 
-  async aiGenerate(params: { industry: string; scene: string; productDesc: string }) {
-    // 调用大模型 API 生成话术
-    const apiKey = this.config.get('KIMI_API_KEY')
-    const baseUrl = this.config.get('KIMI_BASE_URL', 'https://api.moonshot.cn/v1')
+  async recordUsage(templateId: string, replied: boolean) {
+    const [t] = await this.db.select().from(templates).where(eq(templates.id, templateId))
+    if (!t) return
 
-    if (!apiKey) {
-      // Demo 模式返回示例话术
+    const newUseCount = (t.useCount ?? 0) + 1
+    const newReplyCount = replied ? (t.replyCount ?? 0) + 1 : (t.replyCount ?? 0)
+    const newReplyRate = newUseCount > 0 ? newReplyCount / newUseCount : 0
+
+    await this.db.update(templates).set({
+      useCount: newUseCount,
+      replyCount: newReplyCount,
+      replyRate: newReplyRate,
+      updatedAt: new Date(),
+    }).where(eq(templates.id, templateId))
+  }
+
+  // ========== AI 话术生成 ==========
+  async aiGenerate(params: GenerateTemplateParams & { save?: boolean }, userId?: string) {
+    const result = await this.aiService.generateTemplate(params)
+
+    if (!result.passed) {
       return {
-        content: `您好，看到您分享的内容，和我们在${params.industry}领域的产品非常契合。我们有份${params.productDesc}的干货资料想分享给您，方便加个微信吗？（平台这边不好传文件，微信更方便）`,
-        passed: true,
-        sensitiveWords: [],
+        ...result,
+        saved: false,
+        message: `生成的内容包含敏感词：${result.sensitiveWords.join('、')}，请重新生成`,
       }
     }
 
-    // 实际调用 KIMI API
-    try {
-      const { OpenAI } = await import('openai')
-      const client = new OpenAI({ apiKey, baseURL: baseUrl })
-      const prompt = `你是一个专业的销售文案专家。请为${params.industry}行业，${params.scene === 'first_contact' ? '首次触达' : '引导加微信'}场景，产品/服务描述如下：${params.productDesc}，生成一段私信话术。要求：1.不含联系方式，2.引导加微信需使用平台不方便传文件的理由，3.语气自然友好，4.100字以内`
+    // 自动保存到模板库
+    if (params.save !== false && result.content) {
+      const saved = await this.create({
+        name: `AI生成-${params.industry}-${new Date().toLocaleDateString()}`,
+        industry: params.industry,
+        scene: params.scene,
+        content: result.content,
+        variables: result.variables,
+        status: 'active',
+      }, userId)
 
-      const completion = await client.chat.completions.create({
-        model: 'moonshot-v1-8k',
-        messages: [{ role: 'user', content: prompt }],
-      })
-      const content = completion.choices[0]?.message?.content ?? ''
-      return { content, passed: true, sensitiveWords: [] }
-    } catch (err) {
-      return { content: '', error: err.message }
+      return { ...result, saved: true, templateId: saved.id }
     }
+
+    return { ...result, saved: false }
+  }
+
+  // ========== 话术内容安全检测 ==========
+  async checkContent(content: string) {
+    return this.aiService.checkSensitiveWords(content)
   }
 }
