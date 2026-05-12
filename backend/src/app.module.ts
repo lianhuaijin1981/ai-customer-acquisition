@@ -18,6 +18,8 @@ import { SchedulerModule } from './modules/scheduler/scheduler.module'
 import { WeworkModule } from './modules/wework/wework.module'
 import { AbTestModule } from './modules/abtest/abtest.module'
 import { ExportModule } from './modules/export/export.module'
+import { HealthModule } from './modules/health/health.module'
+import { AuditModule } from './modules/audit/audit.module'
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { ExportModule } from './modules/export/export.module'
     WeworkModule,
     AbTestModule,
     ExportModule,
+    HealthModule,
+    AuditModule,
   ],
 })
 export class AppModule {}

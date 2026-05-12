@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common'
+import { Controller, Post, Body, Get, UseGuards, Request, Ip } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger'
 import { AuthService } from './auth.service'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
@@ -10,8 +10,11 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: '登录' })
-  async login(@Body() body: { username: string; password: string }) {
-    return this.authService.login(body.username, body.password)
+  async login(
+    @Body() body: { username: string; password: string },
+    @Ip() ip: string,
+  ) {
+    return this.authService.login(body.username, body.password, ip)
   }
 
   @Get('me')

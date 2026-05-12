@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
 import { CollectorService, CollectTaskConfig } from './collector.service'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { Roles } from '../../common/decorators/roles.decorator'
 
 @ApiTags('数据采集')
 @ApiBearerAuth()
@@ -11,6 +12,7 @@ export class CollectorController {
   constructor(private collectorService: CollectorService) {}
 
   @Post('run')
+  @Roles('admin', 'operator')
   @ApiOperation({ summary: '手动触发采集任务' })
   async runCollect(@Body() body: CollectTaskConfig) {
     const results = await this.collectorService.runCollectTask(body)

@@ -7,10 +7,14 @@ import { AuthService } from '../auth.service'
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(config: ConfigService, private authService: AuthService) {
+    const secret = config.get<string>('APP_JWT_SECRET')
+    if (!secret) {
+      throw new Error('FATAL: APP_JWT_SECRET environment variable is required.')
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: config.get('APP_JWT_SECRET', 'fallback-secret'),
+      secretOrKey: secret,
     })
   }
 

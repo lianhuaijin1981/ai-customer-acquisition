@@ -20,6 +20,11 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Redis 缓存
   redis:
@@ -31,6 +36,11 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # NestJS 后端
   backend:
@@ -46,7 +56,7 @@ services:
     environment:
       APP_PORT: 8000
       APP_ENV: production
-      APP_JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?ERROR: APP_JWT_SECRET must be set in .env}
       DATABASE_URL: postgres://postgres:${DB_PASSWORD:-password}@postgres:5432/ai_customer_acquisition
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -57,6 +67,17 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   # React 前端 (Nginx)
   frontend:
@@ -66,11 +87,78 @@ services:
     container_name: ai_customer_frontend
     depends_on:
       - backend
+    volumes:
+      - ./frontend/ssl:/etc/nginx/ssl:ro
     ports:
       - "80:80"
       - "443:443"
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai_customer_prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Grafana 可视化仪表盘
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai_customer_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Loki 日志聚合
+  loki:
+    image: grafana/loki:latest
+    container_name: ai_customer_loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:

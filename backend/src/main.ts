@@ -1,8 +1,13 @@
 import 'reflect-metadata'
-import { NestFactory } from '@nestjs/core'
+import { NestFactory, Reflector } from '@nestjs/core'
 import { ValidationPipe, Logger } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { AppModule } from './app.module'
+import { RolesGuard } from './common/guards/roles.guard'
+import { AuditInterceptor } from './common/interceptors/audit.interceptor'
+import { AuditService } from './modules/audit/audit.service'
+import { MetricsInterceptor } from './common/interceptors/metrics.interceptor'
+import { MetricsService } from './common/services/metrics.service'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -10,8 +15,10 @@ async function bootstrap() {
   })
   const logger = new Logger('Bootstrap')
 
-  // 全局前缀
-  app.setGlobalPrefix('api')
+  // 全局前缀（health/metrics 端点排除在外）
+  app.setGlobalPrefix('api', {
+    exclude: ['health', 'health/ready', 'health/live', 'metrics'],
+  })
 
   // CORS
   app.enableCors({
@@ -26,6 +33,18 @@ async function bootstrap() {
       transform: true,
       forbidNonWhitelisted: false,
     })
+  )
+
+  // 全局 RBAC 守卫
+  const reflector = app.get(Reflector)
+  app.useGlobalGuards(new RolesGuard(reflector))
+
+  // 全局审计日志拦截器
+  const auditService = app.get(AuditService)
+  const metricsService = app.get(MetricsService)
+  app.useGlobalInterceptors(
+    new AuditInterceptor(auditService, reflector),
+    new MetricsInterceptor(metricsService),
   )
 
   // Swagger 文档

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } fro
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { AccountsService } from './accounts.service'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { Roles } from '../../common/decorators/roles.decorator'
 
 @ApiTags('账号管理')
 @ApiBearerAuth()
@@ -17,19 +18,24 @@ export class AccountsController {
   findOne(@Param('id') id: string) { return this.service.findById(id) }
 
   @Post()
+  @Roles('admin')
   create(@Body() body: any) { return this.service.create(body) }
 
   @Put(':id')
+  @Roles('admin')
   update(@Param('id') id: string, @Body() body: any) { return this.service.update(id, body) }
 
   @Put(':id/toggle')
+  @Roles('admin')
   toggle(@Param('id') id: string) { return this.service.toggleAccount(id) }
 
   @Put(':id/refresh-cookie')
+  @Roles('admin')
   refreshCookie(@Param('id') id: string, @Body() body: { cookie: string }) {
     return this.service.update(id, { loginCookie: body.cookie })
   }
 
   @Delete(':id')
+  @Roles('admin')
   remove(@Param('id') id: string) { return this.service.remove(id) }
 }

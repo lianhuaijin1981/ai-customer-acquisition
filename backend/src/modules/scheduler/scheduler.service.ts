@@ -246,6 +246,42 @@ export class SchedulerService {
     }
   }
 
+  // ========== 每天凌晨 3 点自动备份数据库 ==========
+  @Cron('0 3 * * *', { name: 'auto-db-backup', timeZone: 'Asia/Shanghai' })
+  async autoDatabaseBackup() {
+    this.logger.log('[调度] 开始自动数据库备份')
+    try {
+      const { exec } = require('child_process')
+      const backupDir = process.env.BACKUP_DIR || './backups'
+      const timestamp = dayjs().format('YYYYMMDD_HHmmss')
+      const backupFile = `${backupDir}/ai_customer_acquisition_${timestamp}.sql.gz`
+
+      exec(
+        `mkdir -p ${backupDir} && PGPASSWORD="${process.env.DB_PASSWORD || 'password'}" ` +
+        `pg_dump -h ${process.env.DB_HOST || 'localhost'} -p ${process.env.DB_PORT || '5432'} ` +
+        `-U ${process.env.DB_USER || 'postgres'} -d ai_customer_acquisition ` +
+        `--format=plain --no-owner --no-acl | gzip > ${backupFile}`,
+        (error: any, stdout: string, stderr: string) => {
+          if (error) {
+            this.logger.error(`[调度] 数据库备份失败: ${error.message}`)
+            return
+          }
+          this.logger.log(`[调度] 数据库备份完成: ${backupFile}`)
+
+          // 清理 30 天前的备份
+          exec(
+            `find ${backupDir} -name "ai_customer_acquisition_*.sql.gz" -mtime +30 -delete`,
+            (err2: any) => {
+              if (err2) this.logger.warn(`[调度] 清理过期备份失败: ${err2.message}`)
+            }
+          )
+        }
+      )
+    } catch (err: any) {
+      this.logger.error(`[调度] 数据库备份异常: ${err.message}`)
+    }
+  }
+
   // ========== 话术变量渲染 ==========
   private renderTemplate(template: string, variables: Record<string, string>): string {
     return template.replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] ?? `{{${key}}}`)

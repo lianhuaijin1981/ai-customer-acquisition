@@ -272,3 +272,23 @@ export const abTestVariants = pgTable('ab_test_variants', {
 }, (table) => ({
   testIdx: index('ab_variant_test_idx').on(table.testId),
 }))
+
+// ===================== 审计日志表 =====================
+export const auditLogs = pgTable('audit_logs', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 36 }),
+  username: varchar('username', { length: 50 }),
+  action: varchar('action', { length: 50 }).notNull(),    // login/create/update/delete/export/config_change
+  resource: varchar('resource', { length: 50 }).notNull(), // leads/templates/accounts/outreach/...
+  resourceId: varchar('resource_id', { length: 36 }),
+  detail: text('detail'),
+  ip: varchar('ip', { length: 45 }),
+  userAgent: varchar('user_agent', { length: 500 }),
+  status: varchar('status', { length: 20 }).default('success'), // success/failed
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index('audit_user_idx').on(table.userId),
+  actionIdx: index('audit_action_idx').on(table.action),
+  resourceIdx: index('audit_resource_idx').on(table.resource),
+  createdAtIdx: index('audit_created_at_idx').on(table.createdAt),
+}))

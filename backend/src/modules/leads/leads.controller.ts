@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Param, Body, Query, UseGuards } from '@nest
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { LeadsService } from './leads.service'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { Roles } from '../../common/decorators/roles.decorator'
 
 @ApiTags('线索管理')
 @ApiBearerAuth()
@@ -38,18 +39,21 @@ export class LeadsController {
   }
 
   @Post()
+  @Roles('admin', 'operator')
   @ApiOperation({ summary: '手动创建线索' })
   create(@Body() body: any) {
     return this.leadsService.create(body)
   }
 
   @Put(':id')
+  @Roles('admin', 'operator')
   @ApiOperation({ summary: '更新线索信息' })
   update(@Param('id') id: string, @Body() body: any) {
     return this.leadsService.update(id, body)
   }
 
   @Put(':id/status')
+  @Roles('admin', 'operator')
   @ApiOperation({ summary: '更新线索状态' })
   updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
     return this.leadsService.updateStatus(id, body.status)

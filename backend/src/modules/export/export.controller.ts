@@ -2,6 +2,7 @@ import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { Response } from 'express'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { Roles } from '../../common/decorators/roles.decorator'
 import { ExportService } from './export.service'
 
 @ApiTags('数据导出')
@@ -12,6 +13,7 @@ export class ExportController {
   constructor(private readonly exportService: ExportService) {}
 
   @Get()
+  @Roles('admin', 'operator')
   @ApiOperation({ summary: '导出数据（支持线索/任务/日志/客户/运营数据/模板）' })
   @ApiQuery({ name: 'type', enum: ['leads', 'outreach_tasks', 'outreach_logs', 'customers', 'analytics', 'templates'] })
   @ApiQuery({ name: 'format', enum: ['excel', 'csv'], required: false })

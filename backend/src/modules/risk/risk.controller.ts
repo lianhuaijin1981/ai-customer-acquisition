@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Param, Body, Query, UseGuards } from '@nest
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { RiskService } from './risk.service'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { Roles } from '../../common/decorators/roles.decorator'
 
 @ApiTags('风控管理')
 @ApiBearerAuth()
@@ -20,6 +21,7 @@ export class RiskController {
   getRules() { return this.service.getRules() }
 
   @Put('rules/:id')
+  @Roles('admin')
   updateRule(@Param('id') id: string, @Body() body: any) { return this.service.updateRule(id, body) }
 
   @Get('stats')
