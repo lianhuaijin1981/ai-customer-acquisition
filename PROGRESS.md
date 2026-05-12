@@ -1,6 +1,6 @@
 # PROGRESS.md - AI 智能获客平台开发进度
 
-> 更新时间：2026-05-12 | 当前版本：v0.2.0-beta
+> 更新时间：2026-05-12 | 当前版本：v0.3.0
 
 ---
 
@@ -10,7 +10,7 @@
 |------|------|--------|
 | Phase 1 - 项目骨架 | ✅ 完成 | 100% |
 | Phase 2 - 核心功能 | ✅ 完成 | 100% |
-| Phase 3 - 扩展功能 | 📋 规划中 | 0% |
+| Phase 3 - 扩展功能 | ✅ 完成 | 100% |
 
 ---
 
@@ -121,13 +121,57 @@
 
 ---
 
-## Phase 3 待规划
+## Phase 3 详情（已完成）✅
 
-- [ ] A/B 测试模块（话术效果对比）
-- [ ] 企业微信 SCRM API 接入（好友添加 + 消息发送）
-- [ ] 移动端 H5 适配
-- [ ] 多租户 SaaS 架构
-- [ ] 数据导出（Excel/CSV）
+### 企业微信 SCRM
+
+| 任务 | 状态 | 备注 |
+|------|------|------|
+| ✅ 数据库表设计 | 完成 | `wework_configs`、`wework_friend_requests`、`wework_messages` |
+| ✅ 企微配置管理 | 完成 | CorpId/AgentId/Secret 管理，连接测试 |
+| ✅ AccessToken 自动刷新 | 完成 | 到期自动续期，无效配置 Mock 降级 |
+| ✅ 好友添加 API | 完成 | POST `/wework/friend/add`，支持 leadId/wechatId |
+| ✅ 私信发送 API | 完成 | POST `/wework/message/send`，支持单发/批量 |
+| ✅ 消息记录查询 | 完成 | GET `/wework/messages`，分页+筛选 |
+| ✅ SCRM 统计看板 | 完成 | GET `/wework/stats` |
+| ✅ 前端 SCRM 页面 | 完成 | Tab 式界面：概览/配置/好友/消息 |
+
+### A/B 话术测试
+
+| 任务 | 状态 | 备注 |
+|------|------|------|
+| ✅ 数据库表设计 | 完成 | `ab_tests`、`ab_test_variants` |
+| ✅ 测试管理 CRUD | 完成 | 创建/更新/删除/查询 |
+| ✅ 变体内容管理 | 完成 | A/B 两版话术，独立统计 |
+| ✅ 分流逻辑 | 完成 | 基于 userId 哈希，确定性分流 |
+| ✅ 效果统计上报 | 完成 | 发送/回复/转化三类事件 |
+| ✅ 效果分析 API | 完成 | GET `/abtest/:id/analysis`，胜出版本/提升率/建议 |
+| ✅ 测试状态机 | 完成 | draft → running → paused/completed |
+| ✅ 前端 A/B 测试页面 | 完成 | 列表卡片+创建弹窗+分析弹窗 |
+
+### 数据导出
+
+| 任务 | 状态 | 备注 |
+|------|------|------|
+| ✅ ExcelJS 集成 | 完成 | 后端安装 exceljs，带样式 |
+| ✅ 线索数据导出 | 完成 | Excel/CSV，最多 1 万条 |
+| ✅ 触达任务导出 | 完成 | 任务配置+执行指标 |
+| ✅ 触达日志导出 | 完成 | 最多 5 万条详细记录 |
+| ✅ 客户数据导出 | 完成 | 私域客户库完整数据 |
+| ✅ 运营数据导出 | 完成 | 每日指标，支持平台/日期筛选 |
+| ✅ 话术模板导出 | 完成 | 全量模板+效果数据 |
+| ✅ 导出 API | 完成 | GET `/export?type=&format=&startDate=...` |
+| ✅ 前端导出页面 | 完成 | 6 类数据卡片，日期/平台/状态筛选 |
+
+### 其他优化
+
+| 任务 | 状态 | 备注 |
+|------|------|------|
+| ✅ Sidebar 导航更新 | 完成 | 新增企微/A/B测试/数据导出三个菜单项 |
+| ✅ App 路由更新 | 完成 | 注册三个新页面路由 |
+| ✅ drizzle.config.ts 修正 | 完成 | dialect 改为 postgresql，兼容新版 drizzle-kit |
+| ✅ vite-env.d.ts 补全 | 完成 | 补充 VITE_API_BASE_URL 类型声明 |
+| ✅ 前后端构建验证 | 完成 | TypeScript 无错误，Vite 构建成功 |
 
 ---
 
@@ -163,3 +207,20 @@ docker compose up -d
 - 前端地址：http://localhost:3100
 - 后端 API：http://localhost:8000/api
 - Swagger 文档：http://localhost:8000/api/docs
+
+## Phase 3 新增 API 速览
+
+| 接口 | 说明 |
+|------|------|
+| GET `/api/wework/configs` | 企微配置列表 |
+| POST `/api/wework/configs` | 新增企微配置 |
+| POST `/api/wework/configs/:id/test` | 测试连接 |
+| POST `/api/wework/friend/add` | 添加好友 |
+| POST `/api/wework/message/send` | 发送私信 |
+| POST `/api/wework/message/batch-send` | 批量发私信 |
+| GET `/api/wework/stats` | SCRM 统计 |
+| GET `/api/abtest` | A/B 测试列表 |
+| POST `/api/abtest` | 创建 A/B 测试 |
+| GET `/api/abtest/:id/analysis` | 效果分析 |
+| POST `/api/abtest/:id/record/send` | 上报发送事件 |
+| GET `/api/export?type=leads&format=excel` | 导出数据 |

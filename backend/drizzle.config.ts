@@ -6,9 +6,9 @@ dotenv.config()
 export default {
   schema: './src/database/schema/index.ts',
   out: './src/database/migrations',
-  driver: 'pg',
+  dialect: 'postgresql',
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL || 'postgres://postgres:password@localhost:5432/ai_customer',
+    url: process.env.DATABASE_URL || 'postgres://postgres:password@localhost:5432/ai_customer',
   },
   verbose: true,
   strict: true,

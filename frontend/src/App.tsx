@@ -11,6 +11,9 @@ import AccountsPage from '@/pages/accounts/AccountsPage'
 import TemplatesPage from '@/pages/outreach/TemplatesPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
 import LoginPage from '@/pages/auth/LoginPage'
+import WeworkPage from '@/pages/wework/WeworkPage'
+import AbTestPage from '@/pages/abtest/AbTestPage'
+import ExportPage from '@/pages/export/ExportPage'
 import { useAuthStore } from '@/store/authStore'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -42,6 +45,9 @@ export default function App() {
           <Route path="/risk" element={<RiskPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/wework" element={<WeworkPage />} />
+          <Route path="/abtest" element={<AbTestPage />} />
+          <Route path="/export" element={<ExportPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

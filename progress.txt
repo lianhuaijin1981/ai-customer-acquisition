@@ -1,0 +1,50 @@
+=== AI 智能获客平台 开发进度记录 ===
+
+[2026-05-12] Phase 3 全部完成 - v0.3.0
+
+新增功能：
+1. 企业微信 SCRM（好友添加 + 私信发送）
+   - 后端：backend/src/modules/wework/（service/controller/module）
+   - 数据表：wework_configs / wework_friend_requests / wework_messages
+   - API：GET /api/wework/configs、POST /api/wework/friend/add、POST /api/wework/message/send
+   - 支持 AccessToken 自动刷新，无真实配置时 Mock 降级
+   - 前端：src/pages/wework/WeworkPage.tsx（Tab 式界面）
+
+2. A/B 话术测试模块
+   - 后端：backend/src/modules/abtest/（service/controller/module）
+   - 数据表：ab_tests / ab_test_variants
+   - 基于 userId 哈希的确定性分流（同一用户始终看同一版本）
+   - 效果对比分析：回复率/转化率/提升率/胜出版本建议
+   - API：POST /api/abtest、GET /api/abtest/:id/analysis
+   - 前端：src/pages/abtest/AbTestPage.tsx（创建弹窗+分析弹窗）
+
+3. 数据导出（Excel / CSV）
+   - 后端：backend/src/modules/export/（ExcelJS 集成，带样式）
+   - 支持 6 类数据：线索/任务/日志/客户/运营数据/话术模板
+   - API：GET /api/export?type=leads&format=excel&startDate=...
+   - Excel 带蓝色表头+隔行填色+边框
+   - 前端：src/pages/export/ExportPage.tsx（筛选器+6张卡片）
+
+其他修复/优化：
+- drizzle.config.ts: driver 改为 dialect: postgresql，兼容新版 drizzle-kit
+- 新增 frontend/src/vite-env.d.ts，补充 VITE_API_BASE_URL 类型声明
+- 侧边栏新增企微 SCRM / A/B 测试 / 数据导出三个导航项
+- 前后端构建均通过（TypeScript 零错误）
+
+Git Commits:
+- feat: Phase 3 完成 - 企微SCRM/A/B测试/数据导出/drizzle修复
+
+===========================================
+
+[2026-05-12] Phase 2 完成 - v0.2.0-beta
+- AI 采集引擎（微博/小红书）
+- 风控引擎（Redis 计数器 + 封号检测）
+- 任务调度引擎
+- KIMI AI 接入
+- 前端 API 层 + React Query Hooks
+- 数据看板接入真实数据
+
+[2026-05-11] Phase 1 完成 - v0.1.0
+- 项目骨架搭建（NestJS + Drizzle + React + Vite）
+- 全量页面和 API 实现
+- Docker + CI/CD 配置

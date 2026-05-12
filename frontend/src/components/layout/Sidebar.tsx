@@ -3,7 +3,8 @@ import { cn } from '@/utils/helpers'
 import { useUIStore } from '@/store/uiStore'
 import {
   LayoutDashboard, Users, Send, UserCheck, BarChart3,
-  Shield, Settings, ChevronLeft, ChevronRight, Zap, MessageSquare
+  Shield, Settings, ChevronLeft, ChevronRight, Zap, MessageSquare,
+  MessagesSquare, FlaskConical, Download
 } from 'lucide-react'
 
 const navItems = [
@@ -11,8 +12,11 @@ const navItems = [
   { to: '/leads', icon: Users, label: '线索管理' },
   { to: '/outreach', icon: Send, label: '触达运营' },
   { to: '/outreach/templates', icon: MessageSquare, label: '话术模板' },
+  { to: '/abtest', icon: FlaskConical, label: 'A/B 测试' },
   { to: '/crm', icon: UserCheck, label: '私域承接' },
+  { to: '/wework', icon: MessagesSquare, label: '企微 SCRM' },
   { to: '/analytics', icon: BarChart3, label: '数据分析' },
+  { to: '/export', icon: Download, label: '数据导出' },
   { to: '/risk', icon: Shield, label: '风控管理' },
   { to: '/accounts', icon: Zap, label: '账号管理' },
   { to: '/settings', icon: Settings, label: '系统设置' },
@@ -43,7 +47,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-0.5">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}

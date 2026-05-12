@@ -183,3 +183,92 @@ export const riskRules = pgTable('risk_rules', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+// ===================== 企业微信配置表 =====================
+export const weworkConfigs = pgTable('wework_configs', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  corpId: varchar('corp_id', { length: 100 }).notNull(),
+  corpName: varchar('corp_name', { length: 100 }),
+  agentId: varchar('agent_id', { length: 50 }).notNull(),
+  secret: varchar('secret', { length: 200 }).notNull(),
+  accessToken: text('access_token'),
+  tokenExpiresAt: timestamp('token_expires_at'),
+  status: varchar('status', { length: 20 }).default('inactive'),
+  createdBy: varchar('created_by', { length: 36 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+// ===================== 企业微信好友申请记录表 =====================
+export const weworkFriendRequests = pgTable('wework_friend_requests', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  configId: varchar('config_id', { length: 36 }).notNull(),
+  leadId: varchar('lead_id', { length: 36 }),
+  externalUserId: varchar('external_user_id', { length: 100 }),
+  wechatId: varchar('wechat_id', { length: 100 }),
+  remark: varchar('remark', { length: 200 }),
+  addMethod: varchar('add_method', { length: 30 }).default('qrcode'),
+  status: varchar('status', { length: 20 }).default('pending'),
+  failReason: text('fail_reason'),
+  sentAt: timestamp('sent_at'),
+  acceptedAt: timestamp('accepted_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  leadIdx: index('wework_fr_lead_idx').on(table.leadId),
+  statusIdx: index('wework_fr_status_idx').on(table.status),
+}))
+
+// ===================== 企业微信消息记录表 =====================
+export const weworkMessages = pgTable('wework_messages', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  configId: varchar('config_id', { length: 36 }).notNull(),
+  toUserId: varchar('to_user_id', { length: 100 }).notNull(),
+  leadId: varchar('lead_id', { length: 36 }),
+  msgType: varchar('msg_type', { length: 20 }).default('text'),
+  content: text('content').notNull(),
+  templateId: varchar('template_id', { length: 36 }),
+  abTestId: varchar('ab_test_id', { length: 36 }),
+  abVariant: varchar('ab_variant', { length: 10 }),
+  status: varchar('status', { length: 20 }).default('pending'),
+  errorMsg: text('error_msg'),
+  sentAt: timestamp('sent_at'),
+  repliedAt: timestamp('replied_at'),
+  replyContent: text('reply_content'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  toUserIdx: index('wework_msg_to_user_idx').on(table.toUserId),
+  statusIdx: index('wework_msg_status_idx').on(table.status),
+}))
+
+// ===================== A/B 话术测试表 =====================
+export const abTests = pgTable('ab_tests', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 20 }).default('draft'),
+  splitRatio: real('split_ratio').default(0.5),  // A组占比 0~1
+  targetCount: integer('target_count').default(0),
+  createdBy: varchar('created_by', { length: 36 }),
+  startAt: timestamp('start_at'),
+  endAt: timestamp('end_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+// ===================== A/B 测试变体表 =====================
+export const abTestVariants = pgTable('ab_test_variants', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  testId: varchar('test_id', { length: 36 }).notNull(),
+  variant: varchar('variant', { length: 10 }).notNull(),  // 'A' | 'B'
+  templateId: varchar('template_id', { length: 36 }),
+  content: text('content').notNull(),
+  sentCount: integer('sent_count').default(0),
+  replyCount: integer('reply_count').default(0),
+  convertCount: integer('convert_count').default(0),
+  replyRate: real('reply_rate').default(0),
+  convertRate: real('convert_rate').default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  testIdx: index('ab_variant_test_idx').on(table.testId),
+}))

@@ -184,3 +184,82 @@ export const collectorApi = {
   getStatus: () =>
     http.get<any, { isRunning: boolean }>('/collector/status'),
 }
+
+// ==================== 企业微信 SCRM ====================
+export const weworkApi = {
+  // 配置
+  getConfigs: () =>
+    http.get<any, any[]>('/wework/configs'),
+  createConfig: (data: { corpId: string; corpName?: string; agentId: string; secret: string }) =>
+    http.post<any, any>('/wework/configs', data),
+  deleteConfig: (id: string) =>
+    http.delete<any, any>(`/wework/configs/${id}`),
+  testConnection: (id: string) =>
+    http.post<any, { success: boolean; corpName?: string; error?: string }>(`/wework/configs/${id}/test`),
+
+  // 好友
+  addFriend: (data: { configId: string; leadId?: string; wechatId?: string; remark?: string }) =>
+    http.post<any, { success: boolean; requestId: string; message: string }>('/wework/friend/add', data),
+  getFriendRequests: (params?: Record<string, any>) =>
+    http.get<any, { data: any[]; total: number }>('/wework/friend/requests', { params }),
+
+  // 消息
+  sendMessage: (data: { configId: string; toUserId: string; content: string; templateId?: string }) =>
+    http.post<any, { success: boolean; messageId: string; message: string }>('/wework/message/send', data),
+  batchSend: (data: { configId: string; userIds: string[]; content: string; templateId?: string }) =>
+    http.post<any, { success: number; failed: number; total: number }>('/wework/message/batch-send', data),
+  getMessages: (params?: Record<string, any>) =>
+    http.get<any, { data: any[]; total: number }>('/wework/messages', { params }),
+
+  // 统计
+  getStats: () =>
+    http.get<any, any>('/wework/stats'),
+}
+
+// ==================== A/B 话术测试 ====================
+export const abTestApi = {
+  getList: (params?: Record<string, any>) =>
+    http.get<any, { data: any[]; total: number }>('/abtest', { params }),
+  getById: (id: string) =>
+    http.get<any, any>(`/abtest/${id}`),
+  getAnalysis: (id: string) =>
+    http.get<any, any>(`/abtest/${id}/analysis`),
+  getContent: (id: string, userId: string) =>
+    http.get<any, { variant: 'A' | 'B'; content: string; variantId: string } | null>(`/abtest/${id}/content`, { params: { userId } }),
+  getStats: () =>
+    http.get<any, { total: number; running: number; completed: number; draft: number }>('/abtest/stats'),
+  create: (data: any) =>
+    http.post<any, any>('/abtest', data),
+  update: (id: string, data: any) =>
+    http.patch<any, any>(`/abtest/${id}`, data),
+  updateStatus: (id: string, status: string) =>
+    http.patch<any, any>(`/abtest/${id}/status`, { status }),
+  delete: (id: string) =>
+    http.delete<any, any>(`/abtest/${id}`),
+  recordSend: (id: string, variant: 'A' | 'B') =>
+    http.post<any, any>(`/abtest/${id}/record/send`, { variant }),
+  recordReply: (id: string, variant: 'A' | 'B') =>
+    http.post<any, any>(`/abtest/${id}/record/reply`, { variant }),
+  recordConvert: (id: string, variant: 'A' | 'B') =>
+    http.post<any, any>(`/abtest/${id}/record/convert`, { variant }),
+}
+
+// ==================== 数据导出 ====================
+export const exportApi = {
+  /**
+   * 导出数据——直接触发浏览器下载
+   */
+  download: (params: {
+    type: 'leads' | 'outreach_tasks' | 'outreach_logs' | 'customers' | 'analytics' | 'templates'
+    format?: 'excel' | 'csv'
+    startDate?: string
+    endDate?: string
+    platform?: string
+    status?: string
+  }) => {
+    const query = new URLSearchParams()
+    Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v) })
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
+    window.open(`${baseUrl}/export?${query.toString()}`, '_blank')
+  },
+}

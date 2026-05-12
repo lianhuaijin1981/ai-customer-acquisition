@@ -15,6 +15,9 @@ import { TemplatesModule } from './modules/templates/templates.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { CollectorModule } from './modules/collector/collector.module'
 import { SchedulerModule } from './modules/scheduler/scheduler.module'
+import { WeworkModule } from './modules/wework/wework.module'
+import { AbTestModule } from './modules/abtest/abtest.module'
+import { ExportModule } from './modules/export/export.module'
 
 @Module({
   imports: [
@@ -40,6 +43,9 @@ import { SchedulerModule } from './modules/scheduler/scheduler.module'
     DashboardModule,
     CollectorModule,
     SchedulerModule,
+    WeworkModule,
+    AbTestModule,
+    ExportModule,
   ],
 })
 export class AppModule {}
